@@ -115,4 +115,4 @@ if __name__ == "__main__":
     import uvicorn
 
     port = int(os.getenv("PORT", 8080))  # default to 8080 if not set
-    uvicorn.run("server:app", host="127.0.0.1", port=port, reload=True)
+    uvicorn.run("server:app", host="0.0.0.1", port=port, reload=True)
