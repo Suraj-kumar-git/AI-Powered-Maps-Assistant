@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function GET() {
   try {
     // Test connectivity to ADK server using /list-apps endpoint
-    const response = await fetch('http://localhost:8080/list-apps', {
+    const response = await fetch('https://ai-powered-maps-assistant.onrender.com/list-apps', {
       method: 'GET',
     });
     
@@ -33,7 +33,7 @@ export async function GET() {
       { 
         status: 'disconnected', 
         error: 'Cannot reach ADK server',
-        message: `ADK server is not reachable on localhost:8080: ${errorMessage}`
+        message: `ADK server is not reachable on https://ai-powered-maps-assistant.onrender.com: ${errorMessage}`
       },
       { 
         status: 500,
@@ -46,3 +46,4 @@ export async function GET() {
     );
   }
 }
+
