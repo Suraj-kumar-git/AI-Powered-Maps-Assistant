@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
 
     // First, ensure session exists
     try {
-      await fetch(`http://localhost:8080/apps/${body.appName}/users/${body.userId}/sessions/${body.sessionId}`, {
+      await fetch(`https://ai-powered-maps-assistant.onrender.com/apps/${body.appName}/users/${body.userId}/sessions/${body.sessionId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Forward the request to the ADK server with correct format
-    const response = await fetch('http://localhost:8080/run', {
+    const response = await fetch('https://ai-powered-maps-assistant.onrender.com/run', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -76,3 +76,4 @@ export async function OPTIONS() {
     },
   });
 }
+
