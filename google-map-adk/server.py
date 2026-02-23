@@ -39,10 +39,18 @@ class SessionCreateRequest(BaseModel):
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    await mcp_toolset.close()
+    try:
+        await mcp_toolset.close()
+    except Exception as e:
+        # Log error but do not raise further to avoid unhandled errors on shutdown
+        print(f"Error during mcp_toolset.close() in shutdown_event: {e}")
 
 async def create_runner_for_session(app_name: str, user_id: str, session_id: str) -> Runner:
-    await session_service.create_session(app_name=app_name, user_id=user_id, session_id=session_id)
+    try:
+        await session_service.create_session(app_name=app_name, user_id=user_id, session_id=session_id)
+    except Exception as e:
+        print(f"Error creating session in session_service: {e}")
+        raise
     runner = Runner(app_name=app_name, agent=root_agent, session_service=session_service)
     active_sessions[session_id] = runner
     return runner
@@ -54,16 +62,13 @@ async def create_session(
     session_id: str = Path(...),
     request: SessionCreateRequest = None
 ):
-    """
-    Endpoint to create or validate a session.
-    Your route.ts calls this before /run to ensure session exists.
-    """
-    # Check if session already exists
     if session_id in active_sessions:
         return {"message": "Session already exists"}
-
-    # Otherwise create session and runner
-    await create_runner_for_session(app_name, user_id, session_id)
+    try:
+        await create_runner_for_session(app_name, user_id, session_id)
+    except Exception as e:
+        # Return error info while avoiding 500 Internal Server Error
+        raise HTTPException(status_code=500, detail=f"Session creation failed: {e}")
     return {"message": "Session created"}
 
 @app.post("/run")
@@ -115,4 +120,4 @@ if __name__ == "__main__":
     import uvicorn
 
     port = int(os.getenv("PORT", 8080))  # default to 8080 if not set
-    uvicorn.run("server:app", host="0.0.0.0", port=port, reload=False)
+    uvicorn.run("server:app", host="127.0.0.1", port=port, reload=True)
