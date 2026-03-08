@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+import sys
 from fastapi import FastAPI, HTTPException, Path
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
@@ -8,10 +10,8 @@ from google.genai import types
 from agent import root_agent
 import os
 from dotenv import load_dotenv
+import uvicorn
 
-load_dotenv()
-
-app = FastAPI()
 
 # Globals for session management
 session_service = InMemorySessionService()
@@ -37,13 +37,17 @@ class RunRequest(BaseModel):
 class SessionCreateRequest(BaseModel):
     state: Optional[Dict[str, Any]] = {}
 
-@app.on_event("shutdown")
-async def shutdown_event():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Code before yield runs on startup
+    yield
+    # Code after yield runs on shutdown
     try:
         await mcp_toolset.close()
     except Exception as e:
-        # Log error but do not raise further to avoid unhandled errors on shutdown
         print(f"Error during mcp_toolset.close() in shutdown_event: {e}")
+app = FastAPI(lifespan=lifespan)
+
 
 async def create_runner_for_session(app_name: str, user_id: str, session_id: str) -> Runner:
     try:
@@ -117,7 +121,24 @@ def list_apps():
         "message": "ADK server is operational"
     }
 if __name__ == "__main__":
-    import uvicorn
-
-    port = int(os.getenv("PORT", 8080))  # default to 8080 if not set
-    uvicorn.run("server:app", host="127.0.0.1", port=port, reload=True)
+    # Default to 'dev' if no argument provided
+    env_arg = sys.argv[1] if len(sys.argv) > 1 else 'dev'
+    if env_arg == 'dev':
+        dotenv_path = '.env.dev'
+    elif env_arg == 'prod':
+        dotenv_path = '.env.prod'
+    else:
+        print(f"Unknown environment '{env_arg}'. Use 'dev' or 'prod'.")
+        sys.exit(1)
+    # Load the selected .env file
+    load_dotenv(dotenv_path)
+    app_env = os.getenv('APP_ENV', 'development')
+    host = os.getenv('HOST', '127.0.0.1')
+    port = int(os.getenv('PORT', 8000))
+    reload_flag = False
+    if app_env.lower() == 'development':
+        reload_flag = True
+        if host == '0.0.0.0':
+            host = '127.0.0.1'
+    print(f"Starting server in {app_env} mode on http://{host}:{port}")
+    uvicorn.run("server:app", host=host, port=port, reload=reload_flag)
