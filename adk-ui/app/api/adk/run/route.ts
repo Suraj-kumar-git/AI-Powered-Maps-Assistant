@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
+  const API_URL = process.env.API_URL || process.env.LOCAL_APP_URL || 'http://127.0.0.1:8000';
   try {
     const body = await request.json();
     
@@ -14,7 +15,7 @@ export async function POST(request: NextRequest) {
 
     // First, ensure session exists
     try {
-      await fetch(`https://ai-powered-maps-assistant.onrender.com/apps/${body.appName}/users/${body.userId}/sessions/${body.sessionId}`, {
+      await fetch(`${API_URL}/apps/${body.appName}/users/${body.userId}/sessions/${body.sessionId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -27,7 +28,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Forward the request to the ADK server with correct format
-    const response = await fetch('https://ai-powered-maps-assistant.onrender.com/run', {
+    const response = await fetch(`${API_URL}/run`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -76,4 +77,3 @@ export async function OPTIONS() {
     },
   });
 }
-
